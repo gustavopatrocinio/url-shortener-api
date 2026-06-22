@@ -59,14 +59,21 @@ class UrlShortenerTest extends TestCase
             'original_url' => 'https://destination.test',
         ]);
 
-        $response = $this->get('/'.$link->slug);
+        $response = $this
+            ->withServerVariables(['REMOTE_ADDR' => '203.0.113.10'])
+            ->withHeaders(['User-Agent' => 'PHPUnit Test Agent'])
+            ->get('/'.$link->slug);
 
         $response->assertRedirect('https://destination.test');
 
         $link->refresh();
 
         $this->assertSame(1, $link->clicks_count);
-        $this->assertDatabaseCount('clicks', 1);
+        $this->assertDatabaseHas('clicks', [
+            'link_id' => $link->id,
+            'ip_address' => '203.0.113.10',
+            'user_agent' => 'PHPUnit Test Agent',
+        ]);
     }
 
     public function test_expired_link_returns_gone(): void
@@ -105,6 +112,7 @@ class UrlShortenerTest extends TestCase
 
         $response->assertOk()
             ->assertJsonPath('total_clicks', 2)
+            ->assertJsonPath('period_days', 7)
             ->assertJsonStructure(['clicks_by_day']);
     }
 

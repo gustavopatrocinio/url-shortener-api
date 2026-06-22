@@ -99,7 +99,7 @@ class LinkController extends Controller
     {
         $this->authorize('view', $link);
 
-        $days = (int) $request->query('days', 30);
+        $days = (int) $request->query('days', 7);
         $days = max(1, min($days, 365));
         $from = now()->subDays($days - 1)->startOfDay();
 
