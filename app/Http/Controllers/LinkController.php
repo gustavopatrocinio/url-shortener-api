@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreLinkRequest;
+use App\Http\Requests\UpdateLinkRequest;
+use App\Http\Resources\LinkResource;
+use App\Models\Link;
+use App\Services\LinkCache;
+use App\Services\SlugGenerator;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
+
+class LinkController extends Controller
+{
+    public function __construct(
+        private SlugGenerator $slugGenerator,
+        private LinkCache $linkCache,
+    ) {}
+
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewAny', Link::class);
+
+        $links = $request->user()
+            ->links()
+            ->latest()
+            ->paginate(15);
+
+        return LinkResource::collection($links);
+    }
+
+    public function store(StoreLinkRequest $request): JsonResponse
+    {
+        $this->authorize('create', Link::class);
+
+        $validated = $request->validated();
+
+        $link = DB::transaction(function () use ($request, $validated) {
+            $slug = $this->slugGenerator->generate($validated['slug'] ?? null);
+
+            return $request->user()->links()->create([
+                'slug' => $slug,
+                'original_url' => $validated['original_url'],
+                'title' => $validated['title'] ?? null,
+                'expires_at' => $validated['expires_at'] ?? null,
+                'is_active' => $validated['is_active'] ?? true,
+            ]);
+        });
+
+        $this->linkCache->put($link);
+
+        return (new LinkResource($link))
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    public function show(Link $link): LinkResource
+    {
+        $this->authorize('view', $link);
+
+        return new LinkResource($link);
+    }
+
+    public function update(UpdateLinkRequest $request, Link $link): LinkResource
+    {
+        $this->authorize('update', $link);
+
+        $validated = $request->validated();
+        $previousSlug = $link->slug;
+
+        $link->fill($validated);
+        $link->save();
+
+        if ($previousSlug !== $link->slug) {
+            $this->linkCache->forget($previousSlug);
+        }
+
+        $this->linkCache->put($link);
+
+        return new LinkResource($link);
+    }
+
+    public function destroy(Link $link): JsonResponse
+    {
+        $this->authorize('delete', $link);
+
+        $this->linkCache->forget($link->slug);
+        $link->delete();
+
+        return response()->json([
+            'message' => 'Link deleted successfully.',
+        ]);
+    }
+}
