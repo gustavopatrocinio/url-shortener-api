@@ -94,4 +94,32 @@ class LinkController extends Controller
             'message' => 'Link deleted successfully.',
         ]);
     }
+
+    public function stats(Request $request, Link $link): JsonResponse
+    {
+        $this->authorize('view', $link);
+
+        $days = (int) $request->query('days', 30);
+        $days = max(1, min($days, 365));
+        $from = now()->subDays($days - 1)->startOfDay();
+
+        $clicksByDay = $link->clicks()
+            ->selectRaw('DATE(clicked_at) as day, COUNT(*) as clicks')
+            ->where('clicked_at', '>=', $from)
+            ->groupBy('day')
+            ->orderBy('day')
+            ->get()
+            ->map(fn ($row) => [
+                'day' => $row->day,
+                'clicks' => (int) $row->clicks,
+            ]);
+
+        return response()->json([
+            'link_id' => $link->id,
+            'slug' => $link->slug,
+            'total_clicks' => $link->clicks_count,
+            'clicks_by_day' => $clicksByDay,
+            'period_days' => $days,
+        ]);
+    }
 }
