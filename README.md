@@ -6,7 +6,7 @@ Built as a portfolio/showcase project — focused on clear structure and sensibl
 
 ## Stack
 
-- PHP 8.3
+- PHP 8.4
 - Laravel 13
 - Laravel Sanctum (API tokens)
 - SQLite by default (swap to MySQL/Postgres in production if you want)
@@ -14,7 +14,7 @@ Built as a portfolio/showcase project — focused on clear structure and sensibl
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Composer
 - SQLite extension enabled
 
