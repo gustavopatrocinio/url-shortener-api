@@ -1,0 +1,196 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-06-22T12:00:00.000Z",
+  "__export_source": "url-shortener-api",
+  "resources": [
+    {
+      "_id": "wrk_url_shortener_api",
+      "_type": "workspace",
+      "name": "URL Shortener API",
+      "description": "Default API: http://127.0.0.1:8001\n\nRun: cd url-shortener-api && php artisan serve --port=8001\n\nIf port 8000 is taken by another project (api-task-manager), always use 8001."
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "name": "Local (port 8001)",
+      "data": {
+        "token": "",
+        "link_id": "1",
+        "slug": "abc1234"
+      },
+      "dataPropertyOrder": {
+        "&": ["token", "link_id", "slug"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "parentId": "wrk_url_shortener_api"
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "name": "Auth",
+      "description": "Register, login and logout",
+      "parentId": "wrk_url_shortener_api"
+    },
+    {
+      "_id": "fld_links",
+      "_type": "request_group",
+      "name": "Links",
+      "description": "Authenticated link CRUD and stats",
+      "parentId": "wrk_url_shortener_api"
+    },
+    {
+      "_id": "fld_public",
+      "_type": "request_group",
+      "name": "Public",
+      "description": "Public redirect (web route)",
+      "parentId": "wrk_url_shortener_api"
+    },
+    {
+      "_id": "req_register",
+      "_type": "request",
+      "name": "Register",
+      "description": "Create a new user and receive a Bearer token.",
+      "method": "POST",
+      "url": "http://127.0.0.1:8001/api/auth/register",
+      "parentId": "fld_auth",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Gustavo\",\n  \"email\": \"gustavo@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
+      }
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "name": "Login",
+      "description": "Copy the token from the response into the environment variable `token`.",
+      "method": "POST",
+      "url": "http://127.0.0.1:8001/api/auth/login",
+      "parentId": "fld_auth",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"gustavo@example.com\",\n  \"password\": \"password123\"\n}"
+      }
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "name": "Logout",
+      "method": "POST",
+      "url": "http://127.0.0.1:8001/api/auth/logout",
+      "parentId": "fld_auth",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [{ "name": "Accept", "value": "application/json" }]
+    },
+    {
+      "_id": "req_links_index",
+      "_type": "request",
+      "name": "List Links",
+      "method": "GET",
+      "url": "http://127.0.0.1:8001/api/links",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [{ "name": "Accept", "value": "application/json" }]
+    },
+    {
+      "_id": "req_links_store",
+      "_type": "request",
+      "name": "Create Link",
+      "method": "POST",
+      "url": "http://127.0.0.1:8001/api/links",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"original_url\": \"https://example.com/some/long/path\",\n  \"title\": \"Example link\",\n  \"slug\": \"my-custom-slug\",\n  \"expires_at\": \"2026-12-31T23:59:59Z\",\n  \"is_active\": true\n}"
+      }
+    },
+    {
+      "_id": "req_links_show",
+      "_type": "request",
+      "name": "Show Link",
+      "method": "GET",
+      "url": "http://127.0.0.1:8001/api/links/{{ link_id }}",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [{ "name": "Accept", "value": "application/json" }]
+    },
+    {
+      "_id": "req_links_update",
+      "_type": "request",
+      "name": "Update Link (PUT)",
+      "method": "PUT",
+      "url": "http://127.0.0.1:8001/api/links/{{ link_id }}",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"original_url\": \"https://example.com/updated\",\n  \"title\": \"Updated title\",\n  \"is_active\": true\n}"
+      }
+    },
+    {
+      "_id": "req_links_patch",
+      "_type": "request",
+      "name": "Update Link (PATCH)",
+      "method": "PATCH",
+      "url": "http://127.0.0.1:8001/api/links/{{ link_id }}",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"title\": \"Patched title only\"\n}"
+      }
+    },
+    {
+      "_id": "req_links_destroy",
+      "_type": "request",
+      "name": "Delete Link",
+      "method": "DELETE",
+      "url": "http://127.0.0.1:8001/api/links/{{ link_id }}",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [{ "name": "Accept", "value": "application/json" }]
+    },
+    {
+      "_id": "req_links_stats",
+      "_type": "request",
+      "name": "Link Stats",
+      "method": "GET",
+      "url": "http://127.0.0.1:8001/api/links/{{ link_id }}/stats",
+      "parentId": "fld_links",
+      "authentication": { "type": "bearer", "token": "{{ token }}" },
+      "headers": [{ "name": "Accept", "value": "application/json" }],
+      "parameters": [{ "name": "days", "value": "7" }]
+    },
+    {
+      "_id": "req_redirect",
+      "_type": "request",
+      "name": "Redirect (public)",
+      "method": "GET",
+      "url": "http://127.0.0.1:8001/{{ slug }}",
+      "parentId": "fld_public",
+      "headers": []
+    }
+  ]
+}
