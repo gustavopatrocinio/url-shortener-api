@@ -11,6 +11,7 @@ class Click extends Model
 
     protected $fillable = [
         'link_id',
+        'idempotency_key',
         'clicked_at',
         'ip_address',
         'user_agent',

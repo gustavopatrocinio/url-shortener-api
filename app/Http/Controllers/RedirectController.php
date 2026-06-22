@@ -7,6 +7,7 @@ use App\Models\Link;
 use App\Services\LinkCache;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class RedirectController extends Controller
@@ -40,6 +41,7 @@ class RedirectController extends Controller
 
         RecordClick::dispatch(
             linkId: $payload['id'],
+            idempotencyKey: (string) Str::uuid(),
             ipAddress: $request->ip(),
             userAgent: $request->userAgent(),
             referer: $request->headers->get('referer'),

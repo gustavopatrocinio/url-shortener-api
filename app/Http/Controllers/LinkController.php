@@ -6,6 +6,7 @@ use App\Http\Requests\StoreLinkRequest;
 use App\Http\Requests\UpdateLinkRequest;
 use App\Http\Resources\LinkResource;
 use App\Models\Link;
+use App\Services\IdempotencyService;
 use App\Services\LinkCache;
 use App\Services\SlugGenerator;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,7 @@ class LinkController extends Controller
     public function __construct(
         private SlugGenerator $slugGenerator,
         private LinkCache $linkCache,
+        private IdempotencyService $idempotency,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -36,25 +38,30 @@ class LinkController extends Controller
     {
         $this->authorize('create', Link::class);
 
-        $validated = $request->validated();
+        /** @var JsonResponse $response */
+        $response = $this->idempotency->execute($request, 'links.store', function () use ($request): JsonResponse {
+            $validated = $request->validated();
 
-        $link = DB::transaction(function () use ($request, $validated) {
-            $slug = $this->slugGenerator->generate($validated['slug'] ?? null);
+            $link = DB::transaction(function () use ($request, $validated) {
+                $slug = $this->slugGenerator->generate($validated['slug'] ?? null);
 
-            return $request->user()->links()->create([
-                'slug' => $slug,
-                'original_url' => $validated['original_url'],
-                'title' => $validated['title'] ?? null,
-                'expires_at' => $validated['expires_at'] ?? null,
-                'is_active' => $validated['is_active'] ?? true,
-            ]);
+                return $request->user()->links()->create([
+                    'slug' => $slug,
+                    'original_url' => $validated['original_url'],
+                    'title' => $validated['title'] ?? null,
+                    'expires_at' => $validated['expires_at'] ?? null,
+                    'is_active' => $validated['is_active'] ?? true,
+                ]);
+            });
+
+            $this->linkCache->put($link);
+
+            return (new LinkResource($link))
+                ->response()
+                ->setStatusCode(201);
         });
 
-        $this->linkCache->put($link);
-
-        return (new LinkResource($link))
-            ->response()
-            ->setStatusCode(201);
+        return $response;
     }
 
     public function show(Link $link): LinkResource
